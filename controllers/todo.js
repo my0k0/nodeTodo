@@ -1,0 +1,100 @@
+const Todo = require('../models/todo')
+const moment = require('moment')
+
+const homeController = async (req, res) => {
+  try {
+    const todos = await Todo.find({}).sort({ createdAt: -1 })
+    res.locals.moment = moment
+    res.render('index', { title: 'List Todo', todos })
+  } catch (error) {
+    res.status(500).json({ message: error.message })
+  }
+}
+
+const addTodoFormController = (req, res) => {
+  try {
+    res.render('newTodo', { title: 'New Todo' })
+  } catch (error) {
+    res.status(500).json({ message: error.message })
+  }
+}
+
+const updateTodoFormController = async (req, res) => {
+  try {
+    const { id } = req.query
+    const todo = await Todo.findById(id)
+    if (!todo) res.status(404).json({ message: `todo with ${id} not found` })
+    res.render('updateTodo', { title: 'Update Todo', todo })
+  } catch (error) {
+    res.status(500).json({ message: error.message })
+  }
+}
+
+const deleteTodoFormController = async (req, res) => {
+  try {
+    const { id } = req.query
+    const todo = await Todo.findById(id)
+    if (!todo) res.status(404).json({ message: `todo with ${id} not found` })
+
+    res.render('deleteTodo', { title: 'Delete Todo', todo })
+  } catch (error) {
+    res.status(500).json({ message: error.message })
+  }
+}
+
+const addTodoController = async (req, res) => {
+  try {
+    const { title, desc } = req.body
+
+    if (!title) res.status(400).json({ message: 'Title is required' })
+
+    const newTodo = new Todo({
+      title,
+      desc,
+    })
+
+    await newTodo.save()
+    res.redirect('/')
+  } catch (error) {
+    res.status(500).json({ message: error.message })
+  }
+}
+
+const updateTodoController = async (req, res) => {
+  try {
+    const { id } = req.params
+    const { title, desc } = req.body
+    const todo = await Todo.findById(id)
+    if (!todo) res.status(404).json({ message: `todo with ${id} not found` })
+
+    todo.title = title
+    todo.desc = desc
+
+    await todo.save()
+    res.redirect('/')
+  } catch (error) {
+    res.status(500).json({ message: error.message })
+  }
+}
+
+const deleteTodoController = async (req, res) => {
+  try {
+    const { id, confirm } = req.query
+
+    if (confirm === 'yes') await Todo.findByIdAndDelete(id)
+
+    res.redirect('/')
+  } catch (error) {
+    res.status(500).json({ message: error.message })
+  }
+}
+
+module.exports = {
+  homeController,
+  addTodoFormController,
+  updateTodoFormController,
+  deleteTodoFormController,
+  addTodoController,
+  updateTodoController,
+  deleteTodoController,
+}
